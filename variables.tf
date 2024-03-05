@@ -68,9 +68,8 @@ variable "virtual_network" {
 variable "storage_accounts" {
   type = map(object({
     delete_protection                    = optional(bool)
-    prefix_name                          = string
+    storage_account_name_prefix          = string
     storage_type                         = string
-    authorized_ip_ranges                 = optional(map(string))
     replication_type                     = optional(string, "ZRS")
     subnet_ids                           = optional(map(string))
     file_share_retention_days            = optional(number, 7)
@@ -81,13 +80,31 @@ variable "storage_accounts" {
     container_soft_delete_retention_days = optional(number, 7)
 
     planes = map(object({
-      category = string
-      name     = string
-      sub_path = string
-      size     = number
-      sku      = optional(string)
-      rwmany   = bool
-      protocol = optional(string, "nfs")
+      category   = string
+      plane_name = string
+      sub_path   = string
+      size       = number
+      sku        = optional(string)
+      rwmany     = bool
+      protocol   = optional(string, "nfs")
     }))
   }))
+}
+
+variable "authorized_ip_ranges" {
+  description = "Authorized IP ranges"
+  type        = map(string)
+  default     = {}
+}
+
+variable "use_authorized_ip_ranges_only" {
+  description = "Should Terraform only use the provided IPs for authorization?"
+  type = bool
+  default = false
+}
+
+variable "subnet_ids" {
+  description = "Subnet IDs"
+  type        = list(string)
+  default     = null
 }

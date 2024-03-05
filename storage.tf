@@ -19,9 +19,9 @@ resource "azurerm_management_lock" "protect_blobnfs_storage_accounts" {
 }
 
 resource "azurerm_storage_account" "azurefiles" {
-  for_each = local.azurefile_storage_accounts
+  for_each = local.azurefile_storage_accounts_args
 
-  name                = "hpcc${each.value.prefix_name}${random_string.random.result}af"
+  name                = each.value.storage_account_name
   resource_group_name = module.resource_groups["storage_accounts"].name
   location            = local.location
   tags                = local.tags
@@ -39,8 +39,8 @@ resource "azurerm_storage_account" "azurefiles" {
 
   network_rules {
     default_action             = "Deny"
-    ip_rules                   = values(merge(each.value.authorized_ip_ranges, { host_ip = data.http.host_ip.response_body }))
-    virtual_network_subnet_ids = values(each.value.subnet_ids)
+    ip_rules                   = var.use_authorized_ip_ranges_only ? values(var.authorized_ip_ranges) : values(merge(var.authorized_ip_ranges, { host_ip = trimspace(data.http.host_ip[0].response_body) }))
+    virtual_network_subnet_ids = var.subnet_ids //values(each.value.subnet_ids)
     bypass                     = ["AzureServices"]
   }
   share_properties {
@@ -48,16 +48,17 @@ resource "azurerm_storage_account" "azurefiles" {
       days = each.value.file_share_retention_days
     }
   }
+
+  depends_on = [random_string.random]
 }
 
 resource "azurerm_storage_account" "blobnfs" {
-  for_each = local.blob_storage_accounts
+  for_each = local.blob_storage_accounts_args
 
-  name                = "hpcc${each.value.prefix_name}${random_string.random.result}blob"
+  name                = each.value.storage_account_name
   resource_group_name = module.resource_groups["storage_accounts"].name
   location            = local.location
   tags                = local.tags
-
   access_tier                     = each.value.access_tier
   account_kind                    = each.value.account_kind
   account_tier                    = each.value.account_tier
@@ -74,8 +75,8 @@ resource "azurerm_storage_account" "blobnfs" {
 
   network_rules {
     default_action             = "Deny"
-    ip_rules                   = values(merge(each.value.authorized_ip_ranges, { host_ip = data.http.host_ip.response_body }))
-    virtual_network_subnet_ids = values(each.value.subnet_ids)
+    ip_rules                   = var.use_authorized_ip_ranges_only ? values(var.authorized_ip_ranges) : values(merge(var.authorized_ip_ranges, { host_ip = trimspace(data.http.host_ip[0].response_body) }))
+    virtual_network_subnet_ids = var.subnet_ids //values(each.value.subnet_ids)
     bypass                     = ["AzureServices"]
   }
 
@@ -87,6 +88,8 @@ resource "azurerm_storage_account" "blobnfs" {
       days = each.value.container_soft_delete_retention_days
     }
   }
+
+  depends_on = [random_string.random]
 }
 
 resource "azurerm_storage_share" "azurefiles" {
