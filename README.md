@@ -1,25 +1,18 @@
 # Azure - Storage Account for HPCC Systems
-<br>
 
-# ** DO NOT USE IN PRODUCTION **
-<br>
-<br>
-
-
-## Introduction
-
-This module will deploy a storage account for the HPCC Systems cloud native platform.
 <br>
 
 ## Providers
 
 | Name    | Version   |
 | ------- | --------- |
-| azurerm | >= 2.57.0 |
-| random  | ~>3.1.0   |
+| azurerm | >= 3.63.0 |
+| random  | >= 3.3.0  |
+| azuread | >= 2.42.0 |
 <br>
 
-### The `admin` block:
+### The `owner` block
+
 This block contains information on the user who is deploying the cluster. This is used as tags and part of some resource names to identify who deployed a given resource and how to contact that user. This block is required.
 
 | Name  | Description                  | Type   | Default | Required |
@@ -31,14 +24,15 @@ This block contains information on the user who is deploying the cluster. This i
 Usage Example:
 <br>
 
-    admin = {
-        name  = "Example"
-        email = "example@hpccdemo.com"
+    owner = {
+        name  = "demo"
+        email = "demo@lexisnexisrisk.com"
     }
 
 <br>
 
-### The `disable_naming_conventions` block:
+### The `disable_naming_conventions` block
+
 When set to `true`, this attribute drops the naming conventions set forth by the python module. This attribute is optional.
 
  | Name                       | Description                 | Type | Default | Required |
@@ -46,7 +40,8 @@ When set to `true`, this attribute drops the naming conventions set forth by the
  | disable_naming_conventions | Disable naming conventions. | bool | `false` |    no    |
 <br>
 
-### The `metadata` block:
+### The `metadata` block
+
 TThe arguments in this block are used as tags and part of resources’ names. This block can be omitted when disable_naming_conventions is set to `true`.
 
  | Name                | Description                  | Type   | Default | Required |
@@ -79,105 +74,360 @@ Usage Example:
 
 <br>
 
-### The `tags` argument:
-The tag attribute can be used for additional tags. The tags must be key value pairs. This block is optional.
+### The `virtual_network` block
 
- | Name | Description               | Type        | Default | Required |
- | ---- | ------------------------- | ----------- | ------- | :------: |
- | tags | Additional resource tags. | map(string) | admin   |    no    |
-<br>
+This block imports metadata of a virtual network deployed outside of this project. This block is optional.
 
-### The `resource_group` block:
-This block creates a resource group (like a folder) for your resources. This block is required.
-
- | Name        | Description                                                       | Type   | Default | Required |
- | ----------- | ----------------------------------------------------------------- | ------ | ------- | :------: |
- | unique_name | Will concatenate a number at the end of your resource group name. | bool   | `true`  |   yes    |
- | location    | Cloud region in which to deploy the cluster resources.            | string | null    |   yes    |
+ | Name                | Description                                     | Type        | Default | Required |
+ | ------------------- | ----------------------------------------------- | ----------- | ------- | :------: |
+ | name                | The name of the private subnet.                 | string      | -       |   yes    |
+ | resource_group_name | The name of the virtual network resource group. | string      | -       |   yes    |
+ | subnet_ids          | The IDs  of the subnets to authorize access to. | map(string) | -       |   yes    |
+ | location            | The location of the virtual network             | string      | -       |   yes    |
 <br>
 
 Usage Example:
 <br>
 
-    resource_group = {
-        unique_name = true
-        location    = "canadacentral"
-    }
-
-<br>
-
-### The `storage` block:
-This block deploys the HPCC persistent volumes. This block is required.
-
- | Name                    | Description                                                                                            | Type   | Default     | Valid Options                                                            | Required |
- | ----------------------- | ------------------------------------------------------------------------------------------------------ | ------ | ----------- | ------------------------------------------------------------------------ | :------: |
- | access_tier             | Defines the access tier for `BlobStorage`, `FileStorage`, `Storage2` accounts.                         | string | Hot         | `Cool`, `Hot`                                                            |   yes    |
- | account_kind            | Defines the Kind of account. Changing this will destroy your data.                                     | string | `StorageV2` | `BlobStorage`. `BlockBlobStorage`, `FileStorage`, `Storage`, `StorageV2` |   yes    |
- | account_tier            | Defines the Tier to use for this storage account. Changing this will destroy your data.                | string | `Premium`   | `Standard`, `Premium`                                                    |   yes    |
- | enable_large_file_share | Enable Large File Share.                                                                               | bool   | `false`     | `false`, `true`                                                          |   yes    |
- | replication_type        | Defines the type of replication to use for this storage account. Changing this will destroy your data. | string | `LRS`       | `LRS`, `GRS`, `RAGRS`, `ZRS`, `GZRS`, `RAGZRS`                           |   yes    |
-<br>
-
-Usage Example:
-<br>
-
-    storage = {
-        access_tier              = "Hot"
-        account_kind             = "StorageV2"
-        account_tier             = "Standard"
-        account_replication_type = "LRS"
-
-        quotas = {
-            dali  = 3
-            data  = 2
-            dll   = 2
-            lz    = 2
-            sasha = 5
+    virtual_network = {
+        location            = "value"
+        name                = "value"
+        resource_group_name = "value"
+        subnet_ids = {
+            "name" = "value"
         }
     }
 
 <br>
 
+### The `storage_accounts` block
+
+This block deploys the storage accounts for HPCC-Platform data planes. This block is required.
+
+ | Name                                 | Description                                                                         | Type           | Default | Valid Options           | Required |
+ | ------------------------------------ | ----------------------------------------------------------------------------------- | -------------- | ------- | ----------------------- | :------: |
+ | delete_protection                    | Should deletion be prevented?                                                       | bool           | true    | `true`, `false`         |    no    |
+ | storage_account_name_prefix                          | The prefix name for the storage account. It must be the storage account object key. | string         | -       | -                       |   yes    |
+ | storage_type                         | The storage account type.                                                           | string         | -       | `azurefiles`, `blobnfs` |   yes    |
+ | authorized_ip_ranges                 | Group of IPs to authorize access to the storage account.                            | Object(string) | `{}`    | -                       |    no    |
+ | replication_type                     |
+ | subnet_ids                           |
+ | file_share_retention_days            |
+ | access_tier                          |
+ | account_kind                         |
+ | account_tier                         |
+ | blob_soft_delete_retention_days      |
+ | container_soft_delete_retention_days |
+ <br>
+
+#### The `var.storage_accounts.planes` block
+
+ | Name     | Description                                            | Type   | Default | Valid Options   | Required |
+ | -------- | ------------------------------------------------------ | ------ | ------- | --------------- | :------: |
+ | size     | The size of the share or HPCC data plane               | number | -       | -               |   yes    |
+ | rwmany   | The set of permissions for the plane                   | bool   | true    | `true`, `false` |   yes    |
+ | protocol | The network file sharing protocol to use for the share | string | `NFS`   | `SMB`, `NFS`    |   yes    |
+ | sub_path | The sub path for the HPCC data plane                   | string | -       | -               |   yes    |
+ | category | The category for the HPCC data plane                   | string | -       | -               |   yes    |
+ | plane_name     | The name of the plane                                  | string | -       | -               |   yes    |
+ | sku      | The sku for the plane                                  | string | -       | -               |    no    |
+ <br>
+
+Usage Example:
+<br>
+
+    storage_accounts = {
+        adminsvc1 = {
+            delete_protection         = true //Set to false to allow deletion
+            storage_account_name_prefix               = "adminsvc1"
+            storage_type              = "azurefiles"
+            authorized_ip_ranges      = {}
+            replication_type          = "ZRS"
+            subnet_ids                = {}
+            file_share_retention_days = 7
+            access_tier               = "Hot"
+            account_kind              = "FileStorage"
+            account_tier              = "Premium"
+
+            planes = {
+            dali = {
+                category = "dali"
+                plane_name     = "dali"
+                sub_path = "dalistorage"
+                size     = 100
+                sku      = ""
+                rwmany   = true
+                protocol = "nfs"
+            }
+            }
+        }
+
+        adminsvc2 = {
+            delete_protection                    = true //Set to false to allow deletion
+            storage_account_name_prefix                          = "adminsvc2"
+            storage_type                         = "blobnfs"
+            authorized_ip_ranges                 = {}
+            replication_type                     = "ZRS"
+            subnet_ids                           = {}
+            blob_soft_delete_retention_days      = 7
+            container_soft_delete_retention_days = 7
+            access_tier                          = "Hot"
+            account_kind                         = "StorageV2"
+            account_tier                         = "Standard"
+
+            planes = {
+            dll = {
+                category = "dll"
+                plane_name     = "dll"
+                sub_path = "queries"
+                size     = 100
+                sku      = ""
+                rwmany   = true
+            }
+
+            lz = {
+                category = "lz"
+                plane_name     = "mydropzone"
+                sub_path = "dropzone"
+                size     = 100
+                sku      = ""
+                rwmany   = true
+            }
+
+            sasha = {
+                category = "sasha"
+                plane_name     = "sasha"
+                sub_path = "sashastorage"
+                size     = 100
+                sku      = ""
+                rwmany   = true
+            }
+
+            debug = {
+                category = "debug"
+                plane_name     = "debug"
+                sub_path = "debug"
+                size     = 100
+                sku      = ""
+                rwmany   = true
+            }
+            }
+        }
+
+        data1 = {
+            delete_protection                    = true //Set to false to allow deletion
+            storage_account_name_prefix                          = "data1"
+            storage_type                         = "blobnfs"
+            authorized_ip_ranges                 = {}
+            replication_type                     = "ZRS"
+            subnet_ids                           = {}
+            blob_soft_delete_retention_days      = 7
+            container_soft_delete_retention_days = 7
+            access_tier                          = "Hot"
+            account_kind                         = "StorageV2"
+            account_tier                         = "Standard"
+
+            planes = {
+            data = {
+                category = "data"
+                plane_name     = "data"
+                sub_path = "hpcc-data"
+                size     = 100
+                sku      = ""
+                rwmany   = true
+            }
+            }
+        }
+
+        data2 = {
+            delete_protection                    = true //Set to false to allow deletion
+            storage_account_name_prefix                          = "data2"
+            storage_type                         = "blobnfs"
+            authorized_ip_ranges                 = {}
+            replication_type                     = "ZRS"
+            subnet_ids                           = {}
+            blob_soft_delete_retention_days      = 7
+            container_soft_delete_retention_days = 7
+            access_tier                          = "Hot"
+            account_kind                         = "StorageV2"
+            account_tier                         = "Standard"
+
+            planes = {
+            data = {
+                category = "data"
+                plane_name     = "data"
+                sub_path = "hpcc-data"
+                size     = 100
+                sku      = ""
+                rwmany   = true
+            }
+            }
+        }
+    }
+<br>
+
 ## Usage
-<ol>
-<li> 
 
-Clone this repo: `git clone https://github.com/gfortil/terraform-azurerm-hpcc-storage.git`. </li>
+    module "storage" {
+        source = "../../../terraform-azurerm-hpcc-storage"
 
-<li>Linux and MacOS</li>
-<ol>
-<li> 
+        owner                      = {
+            name  = "demo"
+            email = "demo@lexisnexisrisk.com"
+        }
 
-Change directory to terraform-azurerm-hpcc-storage: `cd terraform-azurerm-hpcc-storage` </li>
-<li> 
+        disable_naming_conventions = false
 
-Copy examples/admin.tfvars to terraform-azurerm-hpcc-storage: `cp examples/admin.tfvars` </li>
-</ol>
-<li>Windows OS</li>
-<ol>
-<li> 
-    
-Change directory to terraform-azurerm-hpcc-storage: `cd terraform-azurerm-hpcc-storage` </li>
-<li> 
+        metadata                   = {
+            project             = "hpccplatform"
+            product_name        = "hpccplatform"
+            business_unit       = "commercial"
+            environment         = "sandbox"
+            market              = "us"
+            product_group       = "hpcc"
+            resource_group_type = "app"
+            sre_team            = "hpccplatform"
+            subscription_type   = "dev"
+            additional_tags     = { "justification" = "testing" }
+            location            = "eastus" # Acceptable values: eastus, centralus
+        }
 
-Copy examples/admin.tfvars to terraform-azurerm-hpcc-storage: `copy examples/admin.tfvars` </li>
-</ol>
-<li> 
+        virtual_network            = {
+            location            = "value"
+            name                = "value"
+            resource_group_name = "value"
+            subnet_ids = {
+                "name" = "value"
+            }
+        }
+        
+        storage_accounts = {
+            adminsvc1 = {
+                delete_protection           = false //Set to false to allow deletion
+                storage_account_name_prefix = "adminsvc1"
+                storage_type                = "azurefiles"
+                replication_type            = "ZRS"
+                subnet_ids                  = {}
+                file_share_retention_days   = 7
+                access_tier                 = "Hot"
+                account_kind                = "FileStorage"
+                account_tier                = "Premium"
 
-Open `terraform-azurerm-hpcc-storage/admin.tfvars` file. </li>
-<li> 
+                planes = {
+                    dali = {
+                        category   = "dali"
+                        plane_name = "dali"
+                        sub_path   = "dalistorage"
+                        size       = 100
+                        sku        = ""
+                        rwmany     = true
+                        protocol   = "smb"
+                    }
+                }
+            }
 
-Set attributes to your preferred values. </li>
-<li> 
+            adminsvc2 = {
+                delete_protection                    = false //Set to false to allow deletion
+                storage_account_name_prefix          = "adminsvc2"
+                storage_type                         = "blob"
+                replication_type                     = "ZRS"
+                subnet_ids                           = {}
+                blob_soft_delete_retention_days      = 7
+                container_soft_delete_retention_days = 7
+                access_tier                          = "Hot"
+                account_kind                         = "StorageV2"
+                account_tier                         = "Standard"
 
-Save `terraform-azurerm-hpcc-storage/admin.tfvars` file. </li>
-<li> 
+                planes = {
+                    dll = {
+                        category   = "dll"
+                        plane_name = "dll"
+                        sub_path   = "queries"
+                        size       = 100
+                        sku        = ""
+                        rwmany     = true
+                    }
 
-Run `terraform init`. This step is only required before your first `terraform apply`. </li>
-<li> 
+                    lz = {
+                        category   = "lz"
+                        plane_name = "mydropzone"
+                        sub_path   = "dropzone"
+                        size       = 100
+                        sku        = ""
+                        rwmany     = true
+                    }
 
-Run `terraform apply -var-file=admin.tfvars` or `terraform apply -var-file=admin.tfvars -auto-approve`. </li>
-<li> 
+                    sasha = {
+                        category   = "sasha"
+                        plane_name = "sasha"
+                        sub_path   = "sashastorage"
+                        size       = 100
+                        sku        = ""
+                        rwmany     = true
+                    }
 
-Type `yes` if you didn't pass the flag `-auto-approve`. </li>
-</ol>
+                    debug = {
+                        category   = "debug"
+                        plane_name = "debug"
+                        sub_path   = "debug"
+                        size       = 100
+                        sku        = ""
+                        rwmany     = true
+                    }
+                }
+            }
+
+            data1 = {
+                delete_protection                    = false //Set to false to allow deletion
+                storage_account_name_prefix          = "data1"
+                storage_type                         = "blob"
+                replication_type                     = "ZRS"
+                subnet_ids                           = {}
+                blob_soft_delete_retention_days      = 7
+                container_soft_delete_retention_days = 7
+                access_tier                          = "Hot"
+                account_kind                         = "StorageV2"
+                account_tier                         = "Standard"
+
+                planes = {
+                    data = {
+                        category   = "data"
+                        plane_name = "data"
+                        sub_path   = "hpcc-data"
+                        size       = 100
+                        sku        = ""
+                        rwmany     = true
+                    }
+                }
+            }
+
+            data2 = {
+                delete_protection                    = false //Set to false to allow deletion
+                storage_account_name_prefix          = "data2"
+                storage_type                         = "blob"
+                replication_type                     = "ZRS"
+                subnet_ids                           = {}
+                blob_soft_delete_retention_days      = 7
+                container_soft_delete_retention_days = 7
+                access_tier                          = "Hot"
+                account_kind                         = "StorageV2"
+                account_tier                         = "Standard"
+
+                planes = {
+                    data = {
+                        category   = "data"
+                        plane_name = "data"
+                        sub_path   = "hpcc-data"
+                        size       = 100
+                        sku        = ""
+                        rwmany     = true
+                    }
+                }
+            }
+        }
+
+        authorized_ip_ranges = {
+        "ip_1" = ""
+        }
+
+    }

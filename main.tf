@@ -1,13 +1,8 @@
-resource "random_integer" "random" {
-  min = 1
-  max = 3
-}
-
 resource "random_string" "random" {
-  length  = 43
-  upper   = false
-  number  = false
+  length  = 4
   special = false
+  numeric = false
+  upper   = false
 }
 
 module "subscription" {
@@ -25,7 +20,7 @@ module "metadata" {
   naming_rules = module.naming.yaml
 
   market              = var.metadata.market
-  location            = var.resource_group.location
+  location            = local.location
   sre_team            = var.metadata.sre_team
   environment         = var.metadata.environment
   product_name        = var.metadata.product_name
@@ -33,42 +28,17 @@ module "metadata" {
   product_group       = var.metadata.product_group
   subscription_type   = var.metadata.subscription_type
   resource_group_type = var.metadata.resource_group_type
-  subscription_id     = data.azurerm_subscription.current.id
+  subscription_id     = module.subscription.output.subscription_id
   project             = var.metadata.project
 }
 
-module "resource_group" {
-  source = "github.com/Azure-Terraform/terraform-azurerm-resource-group.git?ref=v2.0.0"
+module "resource_groups" {
+  source = "github.com/Azure-Terraform/terraform-azurerm-resource-group.git?ref=v2.1.0"
 
-  unique_name = var.resource_group.unique_name
-  location    = var.resource_group.location
-  names       = local.names
-  tags        = local.tags
-}
+  for_each = local.resource_groups
 
-resource "azurerm_storage_account" "storage_account" {
-
-  name                     = lower(try("${var.admin.name}hpccsa${random_integer.random.result}", "hpccsa${random_integer.random.result}404"))
-  resource_group_name      = module.resource_group.name
-  location                 = module.resource_group.location
-  account_tier             = var.storage.account_tier
-  account_replication_type = var.storage.account_replication_type
-  min_tls_version          = "TLS1_2"
-  tags                     = local.tags
-}
-
-resource "azurerm_storage_share" "storage_shares" {
-  for_each = local.storage_shares
-
-  name                 = each.key
-  storage_account_name = azurerm_storage_account.storage_account.name
-  quota                = each.value
-
-  acl {
-    id = random_string.random.result
-
-    access_policy {
-      permissions = "rwdl"
-    }
-  }
+  unique_name = true
+  location    = module.metadata.location
+  names       = module.metadata.names
+  tags        = merge(local.tags, each.value.tags)
 }
