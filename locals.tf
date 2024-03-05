@@ -22,22 +22,19 @@ locals {
     }
   }
 
-  # subnet_ids = merge({
-  #   for k, v in var.virtual_network.subnet_ids : k => "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${var.virtual_network.resource_group_name}/providers/Microsoft.Network/virtualNetworks/${var.virtual_network.name}/subnets/${v}"
-  # }, var.virtual_network.subnet_ids)
-
   azure_files_pv_protocol = "nfs"
 
   planes = flatten([
     for k, v in var.storage_accounts :
     [
       for x, y in v.planes : {
-        "container_name" : "${y.name}"
-        "plane_name" : "${y.name}"
+        "container_name" : "${y.plane_name}"
+        "plane_name" : "${y.plane_name}"
         "category" : "${y.category}"
         "path" : "${y.sub_path}"
         "size" : "${y.size}"
-        "storage_account" : v.storage_type == "azurefiles" ? "${azurerm_storage_account.azurefiles[v.prefix_name].name}" : "${azurerm_storage_account.blobnfs[v.prefix_name].name}"
+        "storage_account_name" : v.storage_type == "azurefiles" ? "${v.storage_account_name_prefix}${random_string.random.result}af" : "${v.storage_account_name_prefix}${random_string.random.result}blob"
+        "storage_account_name_prefix" : v.storage_account_name_prefix
         "resource_group" : "${module.resource_groups["storage_accounts"].name}"
         "storage_type" : "${v.storage_type}"
         "protocol" : v.storage_type == "azurefiles" ? "${upper(y.protocol)}" : null
@@ -45,20 +42,19 @@ locals {
         "account_kind" : "${v.account_kind}"
         "account_tier" : "${v.account_tier}"
         "replication_type" : "${v.replication_type}"
-        "authorized_ip_ranges" : "${merge(v.authorized_ip_ranges, { host_ip = data.http.host_ip.response_body })}"
+        "authorized_ip_ranges" : "${tomap(merge(var.authorized_ip_ranges, { host_ip = data.http.host_ip.response_body }))}"
         "subnet_ids" : "${var.subnet_ids}"
         "file_share_retention_days" : v.storage_type == "azurefiles" ? "${v.file_share_retention_days}" : null
-        "prefix_name" : "${v.prefix_name}"
       }
     ]
   ])
 
-  azurefile_storage_accounts = {
-    for k, v in var.storage_accounts : k => v if v.storage_type == "azurefiles"
+  azurefile_storage_accounts_args = {
+    for k, v in var.storage_accounts : k => merge({ storage_account_name = "${v.storage_account_name_prefix}${random_string.random.result}af" }, v, { "resource_group_name" = module.resource_groups["storage_accounts"].name }) if v.storage_type == "azurefiles"
   }
 
-  blob_storage_accounts = {
-    for k, v in var.storage_accounts : k => v if v.storage_type == "blobnfs"
+  blob_storage_accounts_args = {
+    for k, v in var.storage_accounts : k => merge({ storage_account_name = "${v.storage_account_name_prefix}${random_string.random.result}blob" }, v, { "resource_group_name" = module.resource_groups["storage_accounts"].name }) if v.storage_type == "blobnfs"
   }
 
   azurefile_planes = {
@@ -69,7 +65,27 @@ locals {
     for k, v in local.planes : k => v if v.storage_type == "blobnfs"
   }
 
-  config = jsonencode({
-    "external_storage_config" : "${local.planes}"
-  })
+  azurefile_storage_accounts_attrs = {
+    for k, v in azurerm_storage_account.azurefiles : k => {
+      storage_account_name     = v.name
+      resource_group_name      = v.resource_group_name
+      id                       = v.id
+      account_replication_type = v.account_replication_type
+      account_tier             = v.account_tier
+      primary_access_key       = v.primary_access_key
+      primary_location         = v.primary_location
+    }
+  }
+
+  blob_storage_accounts_attrs = {
+    for k, v in azurerm_storage_account.blobnfs : k => {
+      storage_account_name     = v.name
+      resource_group_name      = v.resource_group_name
+      id                       = v.id
+      account_replication_type = v.account_replication_type
+      account_tier             = v.account_tier
+      primary_access_key       = v.primary_access_key
+      primary_location         = v.primary_location
+    }
+  }
 }

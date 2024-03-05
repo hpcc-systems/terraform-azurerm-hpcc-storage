@@ -19,9 +19,9 @@ resource "azurerm_management_lock" "protect_blobnfs_storage_accounts" {
 }
 
 resource "azurerm_storage_account" "azurefiles" {
-  for_each = local.azurefile_storage_accounts
+  for_each = local.azurefile_storage_accounts_args
 
-  name                = "hpcc${each.value.prefix_name}${random_string.random.result}af"
+  name                = each.value.storage_account_name
   resource_group_name = module.resource_groups["storage_accounts"].name
   location            = local.location
   tags                = local.tags
@@ -31,15 +31,13 @@ resource "azurerm_storage_account" "azurefiles" {
   account_tier                    = each.value.account_tier
   allow_nested_items_to_be_public = false
   min_tls_version                 = "TLS1_2"
-
-  shared_access_key_enabled = true
-
-  enable_https_traffic_only = false
-  account_replication_type  = each.value.replication_type
+  shared_access_key_enabled       = true
+  enable_https_traffic_only       = false
+  account_replication_type        = each.value.replication_type
 
   network_rules {
     default_action             = "Deny"
-    ip_rules                   = values(merge(each.value.authorized_ip_ranges, { host_ip = data.http.host_ip.response_body }))
+    ip_rules                   = values(merge(var.authorized_ip_ranges, { host_ip = data.http.host_ip.response_body }))
     virtual_network_subnet_ids = var.subnet_ids //values(each.value.subnet_ids)
     bypass                     = ["AzureServices"]
   }
@@ -48,12 +46,14 @@ resource "azurerm_storage_account" "azurefiles" {
       days = each.value.file_share_retention_days
     }
   }
+
+  depends_on = [random_string.random]
 }
 
 resource "azurerm_storage_account" "blobnfs" {
-  for_each = local.blob_storage_accounts
+  for_each = local.blob_storage_accounts_args
 
-  name                = "hpcc${each.value.prefix_name}${random_string.random.result}blob"
+  name                = each.value.storage_account_name
   resource_group_name = module.resource_groups["storage_accounts"].name
   location            = local.location
   tags                = local.tags
@@ -64,17 +64,14 @@ resource "azurerm_storage_account" "blobnfs" {
   allow_nested_items_to_be_public = false
   is_hns_enabled                  = true
   min_tls_version                 = "TLS1_2"
-
-  shared_access_key_enabled = true
-
-  nfsv3_enabled             = true
-  enable_https_traffic_only = true
-  account_replication_type  = each.value.replication_type
-
+  shared_access_key_enabled       = true
+  nfsv3_enabled                   = true
+  enable_https_traffic_only       = true
+  account_replication_type        = each.value.replication_type
 
   network_rules {
     default_action             = "Deny"
-    ip_rules                   = values(merge(each.value.authorized_ip_ranges, { host_ip = data.http.host_ip.response_body }))
+    ip_rules                   = values(merge(var.authorized_ip_ranges, { host_ip = data.http.host_ip.response_body }))
     virtual_network_subnet_ids = var.subnet_ids //values(each.value.subnet_ids)
     bypass                     = ["AzureServices"]
   }
@@ -87,13 +84,15 @@ resource "azurerm_storage_account" "blobnfs" {
       days = each.value.container_soft_delete_retention_days
     }
   }
+
+  depends_on = [random_string.random]
 }
 
 resource "azurerm_storage_share" "azurefiles" {
   for_each = local.azurefile_planes
 
   name                 = each.value.container_name
-  storage_account_name = azurerm_storage_account.azurefiles[each.value.prefix_name].name
+  storage_account_name = azurerm_storage_account.azurefiles[each.value.storage_account_name_prefix].name
   quota                = each.value.size
   enabled_protocol     = each.value.protocol
 }
@@ -102,6 +101,6 @@ resource "azurerm_storage_container" "blobnfs" {
   for_each = local.blob_planes
 
   name                  = each.value.container_name
-  storage_account_name  = azurerm_storage_account.blobnfs[each.value.prefix_name].name
+  storage_account_name  = azurerm_storage_account.blobnfs[each.value.storage_account_name_prefix].name
   container_access_type = "private"
 }

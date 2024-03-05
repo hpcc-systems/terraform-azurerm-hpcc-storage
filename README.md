@@ -1,4 +1,5 @@
 # Azure - Storage Account for HPCC Systems
+
 <br>
 
 ## Providers
@@ -10,7 +11,8 @@
 | azuread | >= 2.42.0 |
 <br>
 
-### The `owner` block:
+### The `owner` block
+
 This block contains information on the user who is deploying the cluster. This is used as tags and part of some resource names to identify who deployed a given resource and how to contact that user. This block is required.
 
 | Name  | Description                  | Type   | Default | Required |
@@ -29,7 +31,8 @@ Usage Example:
 
 <br>
 
-### The `disable_naming_conventions` block:
+### The `disable_naming_conventions` block
+
 When set to `true`, this attribute drops the naming conventions set forth by the python module. This attribute is optional.
 
  | Name                       | Description                 | Type | Default | Required |
@@ -37,7 +40,8 @@ When set to `true`, this attribute drops the naming conventions set forth by the
  | disable_naming_conventions | Disable naming conventions. | bool | `false` |    no    |
 <br>
 
-### The `metadata` block:
+### The `metadata` block
+
 TThe arguments in this block are used as tags and part of resources’ names. This block can be omitted when disable_naming_conventions is set to `true`.
 
  | Name                | Description                  | Type   | Default | Required |
@@ -70,7 +74,8 @@ Usage Example:
 
 <br>
 
-### The `virtual_network` block:
+### The `virtual_network` block
+
 This block imports metadata of a virtual network deployed outside of this project. This block is optional.
 
  | Name                | Description                                     | Type        | Default | Required |
@@ -95,13 +100,14 @@ Usage Example:
 
 <br>
 
-### The `storage_accounts` block:
+### The `storage_accounts` block
+
 This block deploys the storage accounts for HPCC-Platform data planes. This block is required.
 
  | Name                                 | Description                                                                         | Type           | Default | Valid Options           | Required |
  | ------------------------------------ | ----------------------------------------------------------------------------------- | -------------- | ------- | ----------------------- | :------: |
  | delete_protection                    | Should deletion be prevented?                                                       | bool           | true    | `true`, `false`         |    no    |
- | prefix_name                          | The prefix name for the storage account. It must be the storage account object key. | string         | -       | -                       |   yes    |
+ | storage_account_name_prefix                          | The prefix name for the storage account. It must be the storage account object key. | string         | -       | -                       |   yes    |
  | storage_type                         | The storage account type.                                                           | string         | -       | `azurefiles`, `blobnfs` |   yes    |
  | authorized_ip_ranges                 | Group of IPs to authorize access to the storage account.                            | Object(string) | `{}`    | -                       |    no    |
  | replication_type                     |
@@ -114,7 +120,7 @@ This block deploys the storage accounts for HPCC-Platform data planes. This bloc
  | container_soft_delete_retention_days |
  <br>
 
-#### The `var.storage_accounts.planes` block:
+#### The `var.storage_accounts.planes` block
 
  | Name     | Description                                            | Type   | Default | Valid Options   | Required |
  | -------- | ------------------------------------------------------ | ------ | ------- | --------------- | :------: |
@@ -123,17 +129,17 @@ This block deploys the storage accounts for HPCC-Platform data planes. This bloc
  | protocol | The network file sharing protocol to use for the share | string | `NFS`   | `SMB`, `NFS`    |   yes    |
  | sub_path | The sub path for the HPCC data plane                   | string | -       | -               |   yes    |
  | category | The category for the HPCC data plane                   | string | -       | -               |   yes    |
- | name     | The name of the plane                                  | string | -       | -               |   yes    |
+ | plane_name     | The name of the plane                                  | string | -       | -               |   yes    |
  | sku      | The sku for the plane                                  | string | -       | -               |    no    |
  <br>
- 
+
 Usage Example:
 <br>
 
     storage_accounts = {
         adminsvc1 = {
             delete_protection         = true //Set to false to allow deletion
-            prefix_name               = "adminsvc1"
+            storage_account_name_prefix               = "adminsvc1"
             storage_type              = "azurefiles"
             authorized_ip_ranges      = {}
             replication_type          = "ZRS"
@@ -146,7 +152,7 @@ Usage Example:
             planes = {
             dali = {
                 category = "dali"
-                name     = "dali"
+                plane_name     = "dali"
                 sub_path = "dalistorage"
                 size     = 100
                 sku      = ""
@@ -158,7 +164,7 @@ Usage Example:
 
         adminsvc2 = {
             delete_protection                    = true //Set to false to allow deletion
-            prefix_name                          = "adminsvc2"
+            storage_account_name_prefix                          = "adminsvc2"
             storage_type                         = "blobnfs"
             authorized_ip_ranges                 = {}
             replication_type                     = "ZRS"
@@ -172,7 +178,7 @@ Usage Example:
             planes = {
             dll = {
                 category = "dll"
-                name     = "dll"
+                plane_name     = "dll"
                 sub_path = "queries"
                 size     = 100
                 sku      = ""
@@ -181,7 +187,7 @@ Usage Example:
 
             lz = {
                 category = "lz"
-                name     = "mydropzone"
+                plane_name     = "mydropzone"
                 sub_path = "dropzone"
                 size     = 100
                 sku      = ""
@@ -190,7 +196,7 @@ Usage Example:
 
             sasha = {
                 category = "sasha"
-                name     = "sasha"
+                plane_name     = "sasha"
                 sub_path = "sashastorage"
                 size     = 100
                 sku      = ""
@@ -199,7 +205,7 @@ Usage Example:
 
             debug = {
                 category = "debug"
-                name     = "debug"
+                plane_name     = "debug"
                 sub_path = "debug"
                 size     = 100
                 sku      = ""
@@ -210,7 +216,7 @@ Usage Example:
 
         data1 = {
             delete_protection                    = true //Set to false to allow deletion
-            prefix_name                          = "data1"
+            storage_account_name_prefix                          = "data1"
             storage_type                         = "blobnfs"
             authorized_ip_ranges                 = {}
             replication_type                     = "ZRS"
@@ -224,7 +230,7 @@ Usage Example:
             planes = {
             data = {
                 category = "data"
-                name     = "data"
+                plane_name     = "data"
                 sub_path = "hpcc-data"
                 size     = 100
                 sku      = ""
@@ -235,7 +241,7 @@ Usage Example:
 
         data2 = {
             delete_protection                    = true //Set to false to allow deletion
-            prefix_name                          = "data2"
+            storage_account_name_prefix                          = "data2"
             storage_type                         = "blobnfs"
             authorized_ip_ranges                 = {}
             replication_type                     = "ZRS"
@@ -249,7 +255,7 @@ Usage Example:
             planes = {
             data = {
                 category = "data"
-                name     = "data"
+                plane_name     = "data"
                 sub_path = "hpcc-data"
                 size     = 100
                 sku      = ""
@@ -269,7 +275,9 @@ Usage Example:
             name  = "demo"
             email = "demo@lexisnexisrisk.com"
         }
+
         disable_naming_conventions = false
+
         metadata                   = {
             project             = "hpccplatform"
             product_name        = "hpccplatform"
@@ -283,6 +291,7 @@ Usage Example:
             additional_tags     = { "justification" = "testing" }
             location            = "eastus" # Acceptable values: eastus, centralus
         }
+
         virtual_network            = {
             location            = "value"
             name                = "value"
@@ -291,37 +300,36 @@ Usage Example:
                 "name" = "value"
             }
         }
-        storage_accounts           = {
+        
+        storage_accounts = {
             adminsvc1 = {
-                delete_protection         = true //Set to false to allow deletion
-                prefix_name               = "adminsvc1"
-                storage_type              = "azurefiles"
-                authorized_ip_ranges      = {}
-                replication_type          = "ZRS"
-                subnet_ids                = {}
-                file_share_retention_days = 7
-                access_tier               = "Hot"
-                account_kind              = "FileStorage"
-                account_tier              = "Premium"
+                delete_protection           = false //Set to false to allow deletion
+                storage_account_name_prefix = "adminsvc1"
+                storage_type                = "azurefiles"
+                replication_type            = "ZRS"
+                subnet_ids                  = {}
+                file_share_retention_days   = 7
+                access_tier                 = "Hot"
+                account_kind                = "FileStorage"
+                account_tier                = "Premium"
 
                 planes = {
-                dali = {
-                    category = "dali"
-                    name     = "dali"
-                    sub_path = "dalistorage"
-                    size     = 100
-                    sku      = ""
-                    rwmany   = true
-                    protocol = "nfs"
-                }
+                    dali = {
+                        category   = "dali"
+                        plane_name = "dali"
+                        sub_path   = "dalistorage"
+                        size       = 100
+                        sku        = ""
+                        rwmany     = true
+                        protocol   = "smb"
+                    }
                 }
             }
 
             adminsvc2 = {
-                delete_protection                    = true //Set to false to allow deletion
-                prefix_name                          = "adminsvc2"
-                storage_type                         = "blobnfs"
-                authorized_ip_ranges                 = {}
+                delete_protection                    = false //Set to false to allow deletion
+                storage_account_name_prefix          = "adminsvc2"
+                storage_type                         = "blob"
                 replication_type                     = "ZRS"
                 subnet_ids                           = {}
                 blob_soft_delete_retention_days      = 7
@@ -331,49 +339,48 @@ Usage Example:
                 account_tier                         = "Standard"
 
                 planes = {
-                dll = {
-                    category = "dll"
-                    name     = "dll"
-                    sub_path = "queries"
-                    size     = 100
-                    sku      = ""
-                    rwmany   = true
-                }
+                    dll = {
+                        category   = "dll"
+                        plane_name = "dll"
+                        sub_path   = "queries"
+                        size       = 100
+                        sku        = ""
+                        rwmany     = true
+                    }
 
-                lz = {
-                    category = "lz"
-                    name     = "mydropzone"
-                    sub_path = "dropzone"
-                    size     = 100
-                    sku      = ""
-                    rwmany   = true
-                }
+                    lz = {
+                        category   = "lz"
+                        plane_name = "mydropzone"
+                        sub_path   = "dropzone"
+                        size       = 100
+                        sku        = ""
+                        rwmany     = true
+                    }
 
-                sasha = {
-                    category = "sasha"
-                    name     = "sasha"
-                    sub_path = "sashastorage"
-                    size     = 100
-                    sku      = ""
-                    rwmany   = true
-                }
+                    sasha = {
+                        category   = "sasha"
+                        plane_name = "sasha"
+                        sub_path   = "sashastorage"
+                        size       = 100
+                        sku        = ""
+                        rwmany     = true
+                    }
 
-                debug = {
-                    category = "debug"
-                    name     = "debug"
-                    sub_path = "debug"
-                    size     = 100
-                    sku      = ""
-                    rwmany   = true
-                }
+                    debug = {
+                        category   = "debug"
+                        plane_name = "debug"
+                        sub_path   = "debug"
+                        size       = 100
+                        sku        = ""
+                        rwmany     = true
+                    }
                 }
             }
 
             data1 = {
-                delete_protection                    = true //Set to false to allow deletion
-                prefix_name                          = "data1"
-                storage_type                         = "blobnfs"
-                authorized_ip_ranges                 = {}
+                delete_protection                    = false //Set to false to allow deletion
+                storage_account_name_prefix          = "data1"
+                storage_type                         = "blob"
                 replication_type                     = "ZRS"
                 subnet_ids                           = {}
                 blob_soft_delete_retention_days      = 7
@@ -383,22 +390,21 @@ Usage Example:
                 account_tier                         = "Standard"
 
                 planes = {
-                data = {
-                    category = "data"
-                    name     = "data"
-                    sub_path = "hpcc-data"
-                    size     = 100
-                    sku      = ""
-                    rwmany   = true
-                }
+                    data = {
+                        category   = "data"
+                        plane_name = "data"
+                        sub_path   = "hpcc-data"
+                        size       = 100
+                        sku        = ""
+                        rwmany     = true
+                    }
                 }
             }
 
             data2 = {
-                delete_protection                    = true //Set to false to allow deletion
-                prefix_name                          = "data2"
-                storage_type                         = "blobnfs"
-                authorized_ip_ranges                 = {}
+                delete_protection                    = false //Set to false to allow deletion
+                storage_account_name_prefix          = "data2"
+                storage_type                         = "blob"
                 replication_type                     = "ZRS"
                 subnet_ids                           = {}
                 blob_soft_delete_retention_days      = 7
@@ -408,15 +414,20 @@ Usage Example:
                 account_tier                         = "Standard"
 
                 planes = {
-                data = {
-                    category = "data"
-                    name     = "data"
-                    sub_path = "hpcc-data"
-                    size     = 100
-                    sku      = ""
-                    rwmany   = true
-                }
+                    data = {
+                        category   = "data"
+                        plane_name = "data"
+                        sub_path   = "hpcc-data"
+                        size       = 100
+                        sku        = ""
+                        rwmany     = true
+                    }
                 }
             }
         }
+
+        authorized_ip_ranges = {
+        "ip_1" = ""
+        }
+
     }
