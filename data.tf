@@ -1,5 +1,5 @@
 data "http" "host_ip" {
-  url = "https://ifconfig.me"
+  url = "https://ipconfig.org"
 }
 
 data "azurerm_subscription" "current" {
