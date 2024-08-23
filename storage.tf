@@ -32,7 +32,7 @@ resource "azurerm_storage_account" "azurefiles" {
   allow_nested_items_to_be_public = false
   min_tls_version                 = "TLS1_2"
   shared_access_key_enabled       = true
-  enable_https_traffic_only       = false
+  https_traffic_only_enabled      = false
   account_replication_type        = each.value.replication_type
 
   network_rules {
@@ -66,7 +66,7 @@ resource "azurerm_storage_account" "blobnfs" {
   min_tls_version                 = "TLS1_2"
   shared_access_key_enabled       = true
   nfsv3_enabled                   = true
-  enable_https_traffic_only       = true
+  https_traffic_only_enabled      = true
   account_replication_type        = each.value.replication_type
 
   network_rules {
