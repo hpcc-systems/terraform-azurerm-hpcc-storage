@@ -42,7 +42,7 @@ locals {
         "account_kind" : "${v.account_kind}"
         "account_tier" : "${v.account_tier}"
         "replication_type" : "${v.replication_type}"
-        "authorized_ip_ranges" : "${tomap(merge(var.authorized_ip_ranges, { host_ip = data.http.host_ip.response_body }))}"
+        "authorized_ip_ranges" : var.use_authorized_ip_ranges_only ? tomap(var.authorized_ip_ranges) : "${tomap(merge(var.authorized_ip_ranges, { host_ip = data.http.host_ip[0].response_body }))}"
         "subnet_ids" : "${var.subnet_ids}"
         "file_share_retention_days" : v.storage_type == "azurefiles" ? "${v.file_share_retention_days}" : null
       }
